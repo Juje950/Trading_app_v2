@@ -39,6 +39,22 @@ report_generator = ReportGenerator(calculate_monthly_distribution)
 auth_manager = AuthManager(sheets_manager)
 app_utils = AppUtils()
 
+if __name__ == "__main__":
+    app_utils.initialize_session_state()
+    if auth_manager.authenticate():
+        df_trades, df_capital, ganancia_dia, cant_trades_dia, ganancia_total = load_data()
+        if 'backup_realizado' not in st.session_state:
+            if sheets_manager.backup_data():
+                st.session_state.backup_realizado = True
+        if st.session_state.usuario == "Bruno":
+            st.set_page_config(page_title="Dashboard Trading Bruno", layout="wide")
+            show_admin_dashboard(df_trades, df_capital)
+        else:
+            st.set_page_config(page_title=f"Dashboard de {st.session_state.usuario}", layout="wide")
+            show_investor_dashboard(df_trades, df_capital)
+        if st.sidebar.button("Cerrar Sesión"):
+            auth_manager.logout()
+
 def load_data():
     try:
         df_trades = sheets_manager.get_trades_data()
@@ -419,18 +435,4 @@ def show_investor_dashboard(df_trades, df_capital):
     else:
         st.info("No hay datos para mostrar la evolución histórica.")
 
-if __name__ == "__main__":
-    app_utils.initialize_session_state()
-    if auth_manager.authenticate():
-        df_trades, df_capital, ganancia_dia, cant_trades_dia, ganancia_total = load_data()
-        if 'backup_realizado' not in st.session_state:
-            if sheets_manager.backup_data():
-                st.session_state.backup_realizado = True
-        if st.session_state.usuario == "Bruno":
-            st.set_page_config(page_title="Dashboard Trading Bruno", layout="wide")
-            show_admin_dashboard(df_trades, df_capital)
-        else:
-            st.set_page_config(page_title=f"Dashboard de {st.session_state.usuario}", layout="wide")
-            show_investor_dashboard(df_trades, df_capital)
-        if st.sidebar.button("Cerrar Sesión"):
-            auth_manager.logout()
+
