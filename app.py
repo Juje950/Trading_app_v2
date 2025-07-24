@@ -39,6 +39,9 @@ report_generator = ReportGenerator(calculate_monthly_distribution)
 auth_manager = AuthManager(sheets_manager)
 app_utils = AppUtils()
 
+st.title("Bienvenido al Dashboard de Trading")
+
+
 if __name__ == "__main__":
     app_utils.initialize_session_state()
     if auth_manager.authenticate():
