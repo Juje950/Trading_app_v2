@@ -9,9 +9,11 @@ class PlotGenerator:
         if investor:
             df = df[df['Inversor'] == investor]
         
+        if 'Fecha' not in df.columns or 'Capital' not in df.columns or 'Ganancia' not in df.columns:
+            raise ValueError("Las columnas necesarias no están presentes en el DataFrame.")
+        
         fig = go.Figure()
         
-        # Línea punteada para capital
         fig.add_trace(go.Scatter(
             x=df['Fecha'],
             y=df['Capital'],
@@ -20,7 +22,6 @@ class PlotGenerator:
             mode='lines'
         ))
         
-        # Línea sólida para ganancias
         fig.add_trace(go.Scatter(
             x=df['Fecha'],
             y=df['Ganancia'],
@@ -29,14 +30,12 @@ class PlotGenerator:
             mode='lines'
         ))
         
-        # Configuración del layout
         fig.update_layout(
             title='Evolución de Capital y Ganancias' + (f' - {investor}' if investor else ''),
             xaxis_title='Fecha',
             yaxis_title='Monto (USD)',
             hovermode='x unified',
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            separators=',.'
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
         
         return fig
@@ -44,6 +43,9 @@ class PlotGenerator:
     @staticmethod
     def create_pie_chart(df, values_col, names_col, title):
         """Crea gráfico de torta para distribución"""
+        if values_col not in df.columns or names_col not in df.columns:
+            raise ValueError("Las columnas necesarias no están presentes en el DataFrame.")
+        
         fig = px.pie(
             df,
             values=values_col,
@@ -58,6 +60,9 @@ class PlotGenerator:
     @staticmethod
     def create_bar_chart(df, x_col, y_col, color_col=None, title='', barmode='group'):
         """Crea gráfico de barras agrupadas"""
+        if x_col not in df.columns or y_col not in df.columns:
+            raise ValueError("Las columnas necesarias no están presentes en el DataFrame.")
+        
         fig = px.bar(
             df,
             x=x_col,
