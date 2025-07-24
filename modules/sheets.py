@@ -7,9 +7,15 @@ import streamlit as st
 
 class SheetsManager:
     def __init__(self):
-        self.creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=SCOPES)
-        self.gc = gspread.authorize(self.creds)
-        self._setup_sheets()
+        try:
+            self.creds = Credentials.from_service_account_info(
+                st.secrets["gcp_service_account"], scopes=SCOPES
+            )
+            self.gc = gspread.authorize(self.creds)
+            self._setup_sheets()
+        except Exception as e:
+            st.error(f"Error al conectar con Google Sheets: {str(e)}")
+            raise
     
     def _setup_sheets(self):
         self.sh_trades = self.gc.open_by_key(SHEET_TRADES_ID)
@@ -18,24 +24,22 @@ class SheetsManager:
         self.worksheet_capital = self.sh_capital.sheet1
 
     def _parse_date(self, date_str):
-        """Convierte string de fecha a datetime object"""
         try:
             return datetime.strptime(date_str, '%d/%m/%Y').date()
         except:
+            st.warning(f"Fecha inválida: {date_str}")
             return None
 
     def get_trades_data(self):
-        """Obtiene y limpia datos de trades"""
         try:
             records = self.worksheet_trades.get_all_records()
             df = pd.DataFrame(records)
-            
-            # Limpieza y conversión
             df.columns = df.columns.str.strip().str.lower()
-            df["fecha"] = pd.to_datetime(df["fecha"], format='%d/%m/%Y', errors='coerce')
-            df["mes"] = df["fecha"].dt.to_period("M")
+
+            if "fecha" in df.columns:
+                df["fecha"] = pd.to_datetime(df["fecha"], format='%d/%m/%Y', errors='coerce')
+                df["mes"] = df["fecha"].dt.to_period("M")
             
-            # Convertir numéricos
             numeric_cols = ["ganancia", "capital_expuesto"]
             for col in numeric_cols:
                 if col in df.columns:
@@ -47,21 +51,18 @@ class SheetsManager:
             raise
 
     def get_capital_data(self):
-        """Obtiene y limpia datos de capital"""
         try:
             records = self.worksheet_capital.get_all_records()
             df = pd.DataFrame(records)
-            
-            # Limpieza y conversión
             df.columns = df.columns.str.strip().str.lower()
-            df["fecha_ingreso"] = pd.to_datetime(df["fecha_ingreso"], format='%d/%m/%Y', errors='coerce')
-            df["mes_ingreso"] = df["fecha_ingreso"].dt.to_period("M").astype(str)
-            
-            # Convertir numéricos
+
+            if "fecha_ingreso" in df.columns:
+                df["fecha_ingreso"] = pd.to_datetime(df["fecha_ingreso"], format='%d/%m/%Y', errors='coerce')
+                df["mes_ingreso"] = df["fecha_ingreso"].dt.to_period("M").astype(str)
+
             if 'capital_inicial' in df.columns:
                 df["capital_inicial"] = pd.to_numeric(df["capital_inicial"], errors='coerce').fillna(0)
-            
-            # Asegurar columna 'tipo'
+
             if 'tipo' not in df.columns:
                 df['tipo'] = 'ingreso'
             
@@ -71,14 +72,11 @@ class SheetsManager:
             raise
 
     def add_trade(self, trade_data):
-        """Añade nuevo trade con validación"""
         try:
-            # Validar fecha
             fecha = self._parse_date(trade_data['fecha'])
             if not fecha:
                 raise ValueError("Formato de fecha inválido. Use DD/MM/AAAA")
             
-            # Preparar datos para Google Sheets
             row_data = [
                 trade_data['fecha'],
                 trade_data['moneda'].upper(),
@@ -95,14 +93,11 @@ class SheetsManager:
             raise
 
     def add_capital_movement(self, movement_data):
-        """Añade movimiento de capital con validación"""
         try:
-            # Validar fecha
             fecha = self._parse_date(movement_data['fecha_ingreso'])
             if not fecha:
                 raise ValueError("Formato de fecha inválido. Use DD/MM/AAAA")
             
-            # Preparar datos
             row_data = [
                 movement_data['nombre'],
                 f"{float(movement_data['capital_inicial']):.2f}",
