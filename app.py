@@ -13,7 +13,7 @@ creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"],
 gc = gspread.authorize(creds)
 
 # ID de la nueva hoja de cálculo (reemplaza con tu ID)
-NUEVA_SHEET_ID = "TU_ID_DE_HOJA_DE_CALCULO_AQUI"
+NUEVA_SHEET_ID = "1RHlwv_Y0UKxEA-WgxUQrD6vj1iUr6PzpI7gfbnwm8MU"
 sh = gc.open_by_key(NUEVA_SHEET_ID)
 
 # Configurar zona horaria Argentina
